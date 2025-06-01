@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chandler Lake</title>
-    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="icon" type="image/jpeg" href="favicon.jpg">
     <style>
         body {
             font-family: 'Courier New', monospace;
@@ -35,13 +35,18 @@
         .nav a {
             color: #0066cc;
             text-decoration: none;
-            display: block;
-            margin-left: 20px;
-            margin-bottom: 2px;
+            display: inline;
+            margin-left: 0px;
+            margin-right: 8px;
         }
         
         .nav a:hover {
             text-decoration: underline;
+        }
+        
+        .current {
+            font-weight: bold;
+            color: #333 !important;
         }
         
         .entry {
@@ -69,26 +74,288 @@
             color: #666;
         }
         
+        .date-lookup {
+            margin-bottom: 30px;
+            padding: 15px;
+            background: #f8f8f8;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .date-lookup input {
+            padding: 5px;
+            margin-right: 8px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .date-lookup button {
+            padding: 5px 10px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .date-lookup button:hover {
+            background: #0052a3;
+        }
+        
+        #dateResult {
+            margin-left: 10px;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .highlight {
+            background: #ffffcc !important;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            margin: 20px 0;
+        }
+        
         .footer {
             margin-top: 60px;
             font-size: 12px;
             color: #999;
+            text-align: center;
         }
     </style>
 </head>
 <body>
     <h1>Chandler Lake</h1>
-    <div class="tagline">my personal task logbook</div>
+    <div class="tagline">what I actually did (last 3 days + infinite scroll)</div>
     
     <div class="nav">
-        |——<a href="index.html">recent</a><br>
-        |——<a href="business.html">business</a><br>
-        |——<a href="school.html">school</a><br>
-        |——<a href="health.html">health</a><br>
-        |——<a href="projects.html">projects</a><br>
-        |——<a href="archive.html">archive</a>
+        <span class="current">recent</span> | <a href="business.html">business</a> | <a href="school.html">school</a> | <a href="health.html">health</a> | <a href="projects.html">projects</a> | <a href="archive.html">archive</a>
     </div>
     
+    <div class="date-lookup">
+        <input type="date" id="dateInput" placeholder="Jump to date...">
+        <button onclick="jumpToDate()">Go</button>
+        <span id="dateResult"></span>
+    </div>
+    
+    <div id="entries-container">
+        <!-- Recent entries (last 3 days) -->
+        <div class="entry">
+            <div class="date">June 1, 2025</div>
+            <ul class="done-list">
+                <li>Set up my daily done website <span class="category-tag">projects</span></li>
+                <li>Had coffee with Sarah about the new project <span class="category-tag">business</span></li>
+                <li>Finished reading chapter 3 of "Atomic Habits" <span class="category-tag">school</span></li>
+                <li>30-minute walk around the neighborhood <span class="category-tag">health</span></li>
+                <li>Fixed the broken CSS on client's website <span class="category-tag">business</span></li>
+                <li>Meal prepped for tomorrow <span class="category-tag">health</span></li>
+            </ul>
+        </div>
+        
+        <div class="entry">
+            <div class="date">May 31, 2025</div>
+            <ul class="done-list">
+                <li>Completed morning routine without checking phone <span class="category-tag">health</span></li>
+                <li>Shipped the login feature for the app <span class="category-tag">business</span></li>
+                <li>Called mom - good 45min conversation</li>
+                <li>Learned basic Spanish conjugations <span class="category-tag">school</span></li>
+                <li>Organized desk and workspace <span class="category-tag">projects</span></li>
+            </ul>
+        </div>
+        
+        <div class="entry">
+            <div class="date">May 30, 2025</div>
+            <ul class="done-list">
+                <li>Rough day - only managed to shower and eat properly <span class="category-tag">health</span></li>
+                <li>Watched documentary about ocean conservation <span class="category-tag">school</span></li>
+                <li>Responded to 3 important emails <span class="category-tag">business</span></li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="loading" id="loading" style="display: none;">
+        Loading more entries...
+    </div>
+    
+    <div class="footer">
+        to suggest improvements, email chandler@chandlerlake.com
+    </div>
 
+    <script>
+        // Sample older data for infinite scroll
+        const olderEntries = [
+            {
+                date: "May 29, 2025",
+                items: [
+                    { text: "Launched new marketing campaign", category: "business" },
+                    { text: "Team meeting about Q3 goals", category: "business" },
+                    { text: "Updated LinkedIn with recent win", category: "business" },
+                    { text: "45min gym session", category: "health" }
+                ]
+            },
+            {
+                date: "May 28, 2025",
+                items: [
+                    { text: "Finished quarterly financial review", category: "business" },
+                    { text: "Started learning React hooks", category: "school" },
+                    { text: "Cooked dinner instead of ordering out", category: "health" },
+                    { text: "Fixed leaky faucet finally", category: "projects" }
+                ]
+            },
+            {
+                date: "May 27, 2025",
+                items: [
+                    { text: "Client presentation went well", category: "business" },
+                    { text: "Read 2 chapters of design book", category: "school" },
+                    { text: "Morning jog - felt great", category: "health" },
+                    { text: "Organized photo collection", category: "projects" }
+                ]
+            },
+            {
+                date: "May 26, 2025",
+                items: [
+                    { text: "Weekend planning session", category: "projects" },
+                    { text: "Helped friend move apartments", category: "" },
+                    { text: "Meal prep for the week", category: "health" },
+                    { text: "Updated portfolio website", category: "business" }
+                ]
+            },
+            {
+                date: "May 25, 2025",
+                items: [
+                    { text: "Morning meditation - 20 minutes", category: "health" },
+                    { text: "Finished JavaScript course module", category: "school" },
+                    { text: "Client call about new feature requests", category: "business" }
+                ]
+            },
+            {
+                date: "May 24, 2025",
+                items: [
+                    { text: "Bike ride to the lake", category: "health" },
+                    { text: "Read chapter 1 of design book", category: "school" },
+                    { text: "Updated website copy", category: "business" },
+                    { text: "Organized digital files", category: "projects" }
+                ]
+            }
+        ];
+        
+        let currentPage = 0;
+        let isLoading = false;
+        
+        // Date lookup functionality
+        function jumpToDate() {
+            const selectedDate = document.getElementById('dateInput').value;
+            const resultSpan = document.getElementById('dateResult');
+            
+            if (!selectedDate) {
+                resultSpan.textContent = 'Please select a date';
+                return;
+            }
+            
+            // Clear previous highlights
+            document.querySelectorAll('.highlight').forEach(el => {
+                el.classList.remove('highlight');
+            });
+            
+            // Format the selected date to match our entry format
+            const dateObj = new Date(selectedDate);
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                           'July', 'August', 'September', 'October', 'November', 'December'];
+            const formattedDate = `${months[dateObj.getMonth()]} ${dateObj.getDate()}, ${dateObj.getFullYear()}`;
+            
+            // Alternative format to check (like in our current entries)
+            const altFormat = `${months[dateObj.getMonth()].slice(0,3)} ${dateObj.getDate()}, ${dateObj.getFullYear()}`;
+            
+            // Find matching date in loaded entries
+            let found = false;
+            const allDates = document.querySelectorAll('.date');
+            
+            allDates.forEach(dateEl => {
+                const dateText = dateEl.textContent.trim();
+                if (dateText === formattedDate || dateText === altFormat || dateText.includes(selectedDate)) {
+                    dateEl.classList.add('highlight');
+                    dateEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    found = true;
+                    resultSpan.textContent = 'Found!';
+                    
+                    // Clear result after 2 seconds
+                    setTimeout(() => {
+                        resultSpan.textContent = '';
+                        dateEl.classList.remove('highlight');
+                    }, 3000);
+                }
+            });
+            
+            if (!found) {
+                resultSpan.textContent = 'Date not found - try scrolling to load more entries';
+                setTimeout(() => {
+                    resultSpan.textContent = '';
+                }, 3000);
+            }
+        }
+        
+        // Allow Enter key to trigger search
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('dateInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    jumpToDate();
+                }
+            });
+        });
+        
+        function createEntryHTML(entry) {
+            const itemsHTML = entry.items.map(item => {
+                const categoryTag = item.category ? 
+                    `<span class="category-tag">${item.category}</span>` : '';
+                return `<li>${item.text}${categoryTag}</li>`;
+            }).join('');
+            
+            return `
+                <div class="entry">
+                    <div class="date">${entry.date}</div>
+                    <ul class="done-list">
+                        ${itemsHTML}
+                    </ul>
+                </div>
+            `;
+        }
+        
+        function loadMoreEntries() {
+            if (isLoading || currentPage >= olderEntries.length) return;
+            
+            isLoading = true;
+            document.getElementById('loading').style.display = 'block';
+            
+            // Simulate loading delay
+            setTimeout(() => {
+                const container = document.getElementById('entries-container');
+                const entry = olderEntries[currentPage];
+                container.insertAdjacentHTML('beforeend', createEntryHTML(entry));
+                
+                currentPage++;
+                isLoading = false;
+                document.getElementById('loading').style.display = 'none';
+            }, 500);
+        }
+        
+        // Infinite scroll detection
+        window.addEventListener('scroll', () => {
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
+                loadMoreEntries();
+            }
+        });
+        
+        // Load first batch on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initial content is already in HTML
+        });
+    </script>
 </body>
 </html>
