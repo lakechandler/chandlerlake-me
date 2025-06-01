@@ -74,6 +74,17 @@
             color: #666;
         }
         
+        .category-tag {
+            display: inline-block;
+            background: #e0e0e0;
+            color: #666;
+            padding: 2px 6px;
+            font-size: 10px;
+            border-radius: 3px;
+            margin-left: 8px;
+            text-transform: uppercase;
+        }
+        
         .date-lookup {
             margin-bottom: 30px;
             padding: 15px;
@@ -129,11 +140,29 @@
             color: #999;
             text-align: center;
         }
+        
+        .refresh-btn {
+            float: right;
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            padding: 4px 8px;
+            font-size: 11px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .refresh-btn:hover {
+            background: #e0e0e0;
+        }
     </style>
 </head>
 <body>
     <h1>Chandler Lake</h1>
-    <div class="tagline">what I actually did (last 3 days + infinite scroll)</div>
+    <div class="tagline">
+        what I actually did (auto-pulled from all categories)
+        <button class="refresh-btn" onclick="loadAllEntries()">↻ refresh</button>
+    </div>
     
     <div class="nav">
         <span class="current">recent</span> | <a href="business.html">business</a> | <a href="school.html">school</a> | <a href="health.html">health</a> | <a href="projects.html">projects</a> | <a href="archive.html">archive</a>
@@ -146,38 +175,7 @@
     </div>
     
     <div id="entries-container">
-        <!-- Recent entries (last 3 days) -->
-        <div class="entry">
-            <div class="date">June 1, 2025</div>
-            <ul class="done-list">
-                <li>Set up my daily done website <span class="category-tag">projects</span></li>
-                <li>Had coffee with Sarah about the new project <span class="category-tag">business</span></li>
-                <li>Finished reading chapter 3 of "Atomic Habits" <span class="category-tag">school</span></li>
-                <li>30-minute walk around the neighborhood <span class="category-tag">health</span></li>
-                <li>Fixed the broken CSS on client's website <span class="category-tag">business</span></li>
-                <li>Meal prepped for tomorrow <span class="category-tag">health</span></li>
-            </ul>
-        </div>
-        
-        <div class="entry">
-            <div class="date">May 31, 2025</div>
-            <ul class="done-list">
-                <li>Completed morning routine without checking phone <span class="category-tag">health</span></li>
-                <li>Shipped the login feature for the app <span class="category-tag">business</span></li>
-                <li>Called mom - good 45min conversation</li>
-                <li>Learned basic Spanish conjugations <span class="category-tag">school</span></li>
-                <li>Organized desk and workspace <span class="category-tag">projects</span></li>
-            </ul>
-        </div>
-        
-        <div class="entry">
-            <div class="date">May 30, 2025</div>
-            <ul class="done-list">
-                <li>Rough day - only managed to shower and eat properly <span class="category-tag">health</span></li>
-                <li>Watched documentary about ocean conservation <span class="category-tag">school</span></li>
-                <li>Responded to 3 important emails <span class="category-tag">business</span></li>
-            </ul>
-        </div>
+        <div class="loading">Loading entries from all categories...</div>
     </div>
     
     <div class="loading" id="loading" style="display: none;">
@@ -189,65 +187,129 @@
     </div>
 
     <script>
-        // Sample older data for infinite scroll
-        const olderEntries = [
-            {
-                date: "May 29, 2025",
-                items: [
-                    { text: "Launched new marketing campaign", category: "business" },
-                    { text: "Team meeting about Q3 goals", category: "business" },
-                    { text: "Updated LinkedIn with recent win", category: "business" },
-                    { text: "45min gym session", category: "health" }
-                ]
-            },
-            {
-                date: "May 28, 2025",
-                items: [
-                    { text: "Finished quarterly financial review", category: "business" },
-                    { text: "Started learning React hooks", category: "school" },
-                    { text: "Cooked dinner instead of ordering out", category: "health" },
-                    { text: "Fixed leaky faucet finally", category: "projects" }
-                ]
-            },
-            {
-                date: "May 27, 2025",
-                items: [
-                    { text: "Client presentation went well", category: "business" },
-                    { text: "Read 2 chapters of design book", category: "school" },
-                    { text: "Morning jog - felt great", category: "health" },
-                    { text: "Organized photo collection", category: "projects" }
-                ]
-            },
-            {
-                date: "May 26, 2025",
-                items: [
-                    { text: "Weekend planning session", category: "projects" },
-                    { text: "Helped friend move apartments", category: "" },
-                    { text: "Meal prep for the week", category: "health" },
-                    { text: "Updated portfolio website", category: "business" }
-                ]
-            },
-            {
-                date: "May 25, 2025",
-                items: [
-                    { text: "Morning meditation - 20 minutes", category: "health" },
-                    { text: "Finished JavaScript course module", category: "school" },
-                    { text: "Client call about new feature requests", category: "business" }
-                ]
-            },
-            {
-                date: "May 24, 2025",
-                items: [
-                    { text: "Bike ride to the lake", category: "health" },
-                    { text: "Read chapter 1 of design book", category: "school" },
-                    { text: "Updated website copy", category: "business" },
-                    { text: "Organized digital files", category: "projects" }
-                ]
-            }
-        ];
-        
-        let currentPage = 0;
+        let allEntries = [];
+        let displayedEntries = 0;
+        const entriesPerLoad = 10;
         let isLoading = false;
+        
+        // Categories to pull from
+        const categories = ['business', 'school', 'health', 'projects'];
+        
+        // Function to parse date strings into sortable format
+        function parseDate(dateString) {
+            // Handle various date formats: "June 1, 2025", "Jun 1, 2025", etc.
+            const date = new Date(dateString);
+            return date.getTime();
+        }
+        
+        // Function to extract entries from HTML content
+        function extractEntriesFromHTML(html, category) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const entries = [];
+            
+            // Find all entry divs
+            const entryDivs = doc.querySelectorAll('.entry');
+            
+            entryDivs.forEach(entryDiv => {
+                const dateEl = entryDiv.querySelector('.date');
+                const listItems = entryDiv.querySelectorAll('.done-list li');
+                
+                if (dateEl && listItems.length > 0) {
+                    const dateText = dateEl.textContent.trim();
+                    const items = Array.from(listItems).map(li => {
+                        // Remove existing category tags and get clean text
+                        const text = li.textContent.replace(/\s*[A-Z]+\s*$/, '').trim();
+                        return text;
+                    });
+                    
+                    entries.push({
+                        date: dateText,
+                        items: items,
+                        category: category,
+                        timestamp: parseDate(dateText)
+                    });
+                }
+            });
+            
+            return entries;
+        }
+        
+        // Function to load entries from a category page
+        async function loadCategoryEntries(category) {
+            try {
+                const response = await fetch(`${category}.html`);
+                if (!response.ok) {
+                    console.log(`${category}.html not found, skipping...`);
+                    return [];
+                }
+                const html = await response.text();
+                return extractEntriesFromHTML(html, category);
+            } catch (error) {
+                console.log(`Error loading ${category}.html:`, error);
+                return [];
+            }
+        }
+        
+        // Function to load all entries from all categories
+        async function loadAllEntries() {
+            const container = document.getElementById('entries-container');
+            container.innerHTML = '<div class="loading">Loading entries from all categories...</div>';
+            
+            allEntries = [];
+            
+            // Load from all category pages
+            for (const category of categories) {
+                const categoryEntries = await loadCategoryEntries(category);
+                allEntries.push(...categoryEntries);
+            }
+            
+            // Sort all entries by date (newest first)
+            allEntries.sort((a, b) => b.timestamp - a.timestamp);
+            
+            // Reset display
+            displayedEntries = 0;
+            container.innerHTML = '';
+            
+            // Display first batch
+            displayMoreEntries();
+            
+            if (allEntries.length === 0) {
+                container.innerHTML = '<div class="loading">No entries found. Create some category pages first!</div>';
+            }
+        }
+        
+        // Function to create HTML for an entry
+        function createEntryHTML(entry) {
+            const itemsHTML = entry.items.map(item => {
+                return `<li>${item} <span class="category-tag">${entry.category}</span></li>`;
+            }).join('');
+            
+            return `
+                <div class="entry">
+                    <div class="date">${entry.date}</div>
+                    <ul class="done-list">
+                        ${itemsHTML}
+                    </ul>
+                </div>
+            `;
+        }
+        
+        // Function to display more entries (for infinite scroll)
+        function displayMoreEntries() {
+            if (isLoading || displayedEntries >= allEntries.length) return;
+            
+            isLoading = true;
+            const container = document.getElementById('entries-container');
+            const endIndex = Math.min(displayedEntries + entriesPerLoad, allEntries.length);
+            
+            for (let i = displayedEntries; i < endIndex; i++) {
+                container.insertAdjacentHTML('beforeend', createEntryHTML(allEntries[i]));
+            }
+            
+            displayedEntries = endIndex;
+            isLoading = false;
+        }
         
         // Date lookup functionality
         function jumpToDate() {
@@ -270,22 +332,18 @@
                            'July', 'August', 'September', 'October', 'November', 'December'];
             const formattedDate = `${months[dateObj.getMonth()]} ${dateObj.getDate()}, ${dateObj.getFullYear()}`;
             
-            // Alternative format to check (like in our current entries)
-            const altFormat = `${months[dateObj.getMonth()].slice(0,3)} ${dateObj.getDate()}, ${dateObj.getFullYear()}`;
-            
             // Find matching date in loaded entries
             let found = false;
             const allDates = document.querySelectorAll('.date');
             
             allDates.forEach(dateEl => {
                 const dateText = dateEl.textContent.trim();
-                if (dateText === formattedDate || dateText === altFormat || dateText.includes(selectedDate)) {
+                if (dateText === formattedDate || dateText.includes(selectedDate)) {
                     dateEl.classList.add('highlight');
                     dateEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     found = true;
                     resultSpan.textContent = 'Found!';
                     
-                    // Clear result after 2 seconds
                     setTimeout(() => {
                         resultSpan.textContent = '';
                         dateEl.classList.remove('highlight');
@@ -294,67 +352,30 @@
             });
             
             if (!found) {
-                resultSpan.textContent = 'Date not found - try scrolling to load more entries';
+                resultSpan.textContent = 'Date not found in loaded entries';
                 setTimeout(() => {
                     resultSpan.textContent = '';
                 }, 3000);
             }
         }
         
-        // Allow Enter key to trigger search
+        // Infinite scroll detection
+        window.addEventListener('scroll', () => {
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
+                displayMoreEntries();
+            }
+        });
+        
+        // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
+            loadAllEntries();
+            
+            // Allow Enter key to trigger date search
             document.getElementById('dateInput').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     jumpToDate();
                 }
             });
-        });
-        
-        function createEntryHTML(entry) {
-            const itemsHTML = entry.items.map(item => {
-                const categoryTag = item.category ? 
-                    `<span class="category-tag">${item.category}</span>` : '';
-                return `<li>${item.text}${categoryTag}</li>`;
-            }).join('');
-            
-            return `
-                <div class="entry">
-                    <div class="date">${entry.date}</div>
-                    <ul class="done-list">
-                        ${itemsHTML}
-                    </ul>
-                </div>
-            `;
-        }
-        
-        function loadMoreEntries() {
-            if (isLoading || currentPage >= olderEntries.length) return;
-            
-            isLoading = true;
-            document.getElementById('loading').style.display = 'block';
-            
-            // Simulate loading delay
-            setTimeout(() => {
-                const container = document.getElementById('entries-container');
-                const entry = olderEntries[currentPage];
-                container.insertAdjacentHTML('beforeend', createEntryHTML(entry));
-                
-                currentPage++;
-                isLoading = false;
-                document.getElementById('loading').style.display = 'none';
-            }, 500);
-        }
-        
-        // Infinite scroll detection
-        window.addEventListener('scroll', () => {
-            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
-                loadMoreEntries();
-            }
-        });
-        
-        // Load first batch on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            // Initial content is already in HTML
         });
     </script>
 </body>
