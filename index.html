@@ -74,6 +74,20 @@
             color: #666;
         }
         
+        .category-tag {
+            display: inline-block;
+            background: #2c3e50;
+            color: #ffffff;
+            padding: 3px 8px;
+            font-size: 9px;
+            border-radius: 12px;
+            margin-left: 8px;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        
         .date-lookup {
             margin-bottom: 30px;
             padding: 15px;
@@ -116,42 +130,17 @@
             border-radius: 3px;
         }
         
-        .loading {
-            text-align: center;
-            color: #666;
-            font-style: italic;
-            margin: 20px 0;
-        }
-        
         .footer {
             margin-top: 60px;
             font-size: 12px;
             color: #999;
             text-align: center;
         }
-        
-        .refresh-btn {
-            float: right;
-            background: #f0f0f0;
-            border: 1px solid #ccc;
-            padding: 4px 8px;
-            font-size: 11px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-family: 'Courier New', monospace;
-        }
-        
-        .refresh-btn:hover {
-            background: #e0e0e0;
-        }
     </style>
 </head>
 <body>
     <h1>Chandler Lake</h1>
-    <div class="tagline">
-        see what I have done today
-        <button class="refresh-btn" onclick="loadAllEntries()">↻ refresh</button>
-    </div>
+    <div class="tagline">see what I have done today</div>
     
     <div class="nav"><span class="current">recent</span> | <a href="business.html">business</a> | <a href="school.html">school</a> | <a href="fitness.html">fitness</a> | <a href="projects.html">projects</a> | <a href="archive.html">archive</a>
     </div>
@@ -163,11 +152,15 @@
     </div>
     
     <div id="entries-container">
-        <div class="loading">Loading entries from all categories...</div>
-    </div>
-    
-    <div class="loading" id="loading" style="display: none;">
-        Loading more entries...
+        <div class="entry">
+            <div class="date">June 01, 2025</div>
+            <ul class="done-list">
+                <li>Filled out WMSP SUP application to ensure legal adherence <span class="category-tag" style="background-color: #2c3e50;">business</span></li>
+                <li>Accepted liability insurance policy <span class="category-tag" style="background-color: #2c3e50;">business</span></li>
+                <li>Created coach training document for 2025 season <span class="category-tag" style="background-color: #2c3e50;">business</span></li>
+                <li>Sent out the summer kickoff email to SL parents <span class="category-tag" style="background-color: #2c3e50;">business</span></li>
+            </ul>
+        </div>
     </div>
     
     <div class="footer">
@@ -175,130 +168,6 @@
     </div>
 
     <script>
-        let allEntries = [];
-        let displayedEntries = 0;
-        const entriesPerLoad = 10;
-        let isLoading = false;
-        
-        // Categories to pull from
-        const categories = ["business", "school", "fitness", "projects"];
-        
-        // Function to parse date strings into sortable format
-        function parseDate(dateString) {
-            // Handle various date formats: "June 1, 2025", "Jun 1, 2025", etc.
-            const date = new Date(dateString);
-            return date.getTime();
-        }
-        
-        // Function to extract entries from HTML content
-        function extractEntriesFromHTML(html, category) {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const entries = [];
-            
-            // Find all entry divs
-            const entryDivs = doc.querySelectorAll('.entry');
-            
-            entryDivs.forEach(entryDiv => {
-                const dateEl = entryDiv.querySelector('.date');
-                const listItems = entryDiv.querySelectorAll('.done-list li');
-                
-                if (dateEl && listItems.length > 0) {
-                    const dateText = dateEl.textContent.trim();
-                    const items = Array.from(listItems).map(li => {
-                        // Remove existing category tags and get clean text
-                        const text = li.textContent.replace(/\s*[A-Z]+\s*$/, '').trim();
-                        return text;
-                    });
-                    
-                    entries.push({
-                        date: dateText,
-                        items: items,
-                        category: category,
-                        timestamp: parseDate(dateText)
-                    });
-                }
-            });
-            
-            return entries;
-        }
-        
-        // Function to load entries from a category page
-        async function loadCategoryEntries(category) {
-            try {
-                const response = await fetch(`${category}.html`);
-                if (!response.ok) {
-                    console.log(`${category}.html not found, skipping...`);
-                    return [];
-                }
-                const html = await response.text();
-                return extractEntriesFromHTML(html, category);
-            } catch (error) {
-                console.log(`Error loading ${category}.html:`, error);
-                return [];
-            }
-        }
-        
-        // Function to load all entries from all categories
-        async function loadAllEntries() {
-            const container = document.getElementById('entries-container');
-            container.innerHTML = '<div class="loading">Loading entries from all categories...</div>';
-            
-            allEntries = [];
-            
-            // Load from all category pages
-            for (const category of categories) {
-                const categoryEntries = await loadCategoryEntries(category);
-                allEntries.push(...categoryEntries);
-            }
-            
-            // Sort all entries by date (newest first)
-            allEntries.sort((a, b) => b.timestamp - a.timestamp);
-            
-            // Reset display
-            displayedEntries = 0;
-            container.innerHTML = '';
-            
-            // Display first batch
-            displayMoreEntries();
-            
-            if (allEntries.length === 0) {
-                container.innerHTML = '<div class="loading">No entries found. Create some category pages first!</div>';
-            }
-        }
-        
-        // Function to create HTML for an entry
-        function createEntryHTML(entry) {
-            const itemsHTML = entry.items.map(item => {
-                return `<li>${item} <span class="category-tag">${entry.category}</span></li>`;
-            }).join('');
-            
-            return `
-                <div class="entry">
-                    <div class="date">${entry.date}</div>
-                    <ul class="done-list">
-                        ${itemsHTML}
-                    </ul>
-                </div>
-            `;
-        }
-        
-        // Function to display more entries (for infinite scroll)
-        function displayMoreEntries() {
-            if (isLoading || displayedEntries >= allEntries.length) return;
-            
-            isLoading = true;
-            const container = document.getElementById('entries-container');
-            const endIndex = Math.min(displayedEntries + entriesPerLoad, allEntries.length);
-            
-            for (let i = displayedEntries; i < endIndex; i++) {
-                container.insertAdjacentHTML('beforeend', createEntryHTML(allEntries[i]));
-            }
-            
-            displayedEntries = endIndex;
-            isLoading = false;
-        }
-        
         // Date lookup functionality
         function jumpToDate() {
             const selectedDate = document.getElementById('dateInput').value;
@@ -320,7 +189,7 @@
                            'July', 'August', 'September', 'October', 'November', 'December'];
             const formattedDate = `${months[dateObj.getMonth()]} ${dateObj.getDate()}, ${dateObj.getFullYear()}`;
             
-            // Find matching date in loaded entries
+            // Find matching date in entries
             let found = false;
             const allDates = document.querySelectorAll('.date');
             
@@ -340,30 +209,18 @@
             });
             
             if (!found) {
-                resultSpan.textContent = 'Date not found in loaded entries';
+                resultSpan.textContent = 'Date not found';
                 setTimeout(() => {
                     resultSpan.textContent = '';
                 }, 3000);
             }
         }
         
-        // Infinite scroll detection
-        window.addEventListener('scroll', () => {
-            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
-                displayMoreEntries();
+        // Allow Enter key to trigger date search
+        document.getElementById('dateInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                jumpToDate();
             }
-        });
-        
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            loadAllEntries();
-            
-            // Allow Enter key to trigger date search
-            document.getElementById('dateInput').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    jumpToDate();
-                }
-            });
         });
     </script>
 </body>

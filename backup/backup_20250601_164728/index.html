@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chandler Lake</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            line-height: 1.6;
+            background: #fafafa;
+            color: #333;
+        }
+        
+        h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+            font-weight: normal;
+        }
+        
+        .tagline {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 40px;
+        }
+        
+        .nav {
+            margin-bottom: 40px;
+        }
+        
+        .nav a {
+            color: #0066cc;
+            text-decoration: none;
+            display: inline;
+            margin-left: 0px;
+            margin-right: 8px;
+        }
+        
+        .nav a:hover {
+            text-decoration: underline;
+        }
+        
+        .current {
+            font-weight: bold;
+            color: #333 !important;
+        }
+        
+        .entry {
+            margin-bottom: 30px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+        }
+        
+        .date {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .done-list {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .done-list li {
+            margin-bottom: 4px;
+        }
+        
+        .done-list li:before {
+            content: "• ";
+            color: #666;
+        }
+        
+        .date-lookup {
+            margin-bottom: 30px;
+            padding: 15px;
+            background: #f8f8f8;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .date-lookup input {
+            padding: 5px;
+            margin-right: 8px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .date-lookup button {
+            padding: 5px 10px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .date-lookup button:hover {
+            background: #0052a3;
+        }
+        
+        #dateResult {
+            margin-left: 10px;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .highlight {
+            background: #ffffcc !important;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            margin: 20px 0;
+        }
+        
+        .footer {
+            margin-top: 60px;
+            font-size: 12px;
+            color: #999;
+            text-align: center;
+        }
+        
+        .refresh-btn {
+            float: right;
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            padding: 4px 8px;
+            font-size: 11px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .refresh-btn:hover {
+            background: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chandler Lake</h1>
+    <div class="tagline">
+        what did you get done this week?
+        <button class="refresh-btn" onclick="loadAllEntries()">↻ refresh</button>
+    </div>
+    
+    <div class="nav"><span class="current">recent</span> | <a href="business.html">business</a> | <a href="school.html">school</a> | <a href="fitness.html">fitness</a> | <a href="projects.html">projects</a> | <a href="archive.html">archive</a>
+    </div>
+    
+    <div class="date-lookup">
+        <input type="date" id="dateInput" placeholder="Jump to date...">
+        <button onclick="jumpToDate()">Go</button>
+        <span id="dateResult"></span>
+    </div>
+    
+    <div id="entries-container">
+        <div class="loading">Loading entries from all categories...</div>
+    </div>
+    
+    <div class="loading" id="loading" style="display: none;">
+        Loading more entries...
+    </div>
+    
+    <div class="footer">
+        to suggest improvements, email chandler@chandlerlake.com
+    </div>
+
+    <script>
+        let allEntries = [];
+        let displayedEntries = 0;
+        const entriesPerLoad = 10;
+        let isLoading = false;
+        
+        // Categories to pull from
+        const categories = ["business", "school", "fitness", "projects"];
+        
+        // Function to parse date strings into sortable format
+        function parseDate(dateString) {
+            // Handle various date formats: "June 1, 2025", "Jun 1, 2025", etc.
+            const date = new Date(dateString);
+            return date.getTime();
+        }
+        
+        // Function to extract entries from HTML content
+        function extractEntriesFromHTML(html, category) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const entries = [];
+            
+            // Find all entry divs
+            const entryDivs = doc.querySelectorAll('.entry');
+            
+            entryDivs.forEach(entryDiv => {
+                const dateEl = entryDiv.querySelector('.date');
+                const listItems = entryDiv.querySelectorAll('.done-list li');
+                
+                if (dateEl && listItems.length > 0) {
+                    const dateText = dateEl.textContent.trim();
+                    const items = Array.from(listItems).map(li => {
+                        // Remove existing category tags and get clean text
+                        const text = li.textContent.replace(/\s*[A-Z]+\s*$/, '').trim();
+                        return text;
+                    });
+                    
+                    entries.push({
+                        date: dateText,
+                        items: items,
+                        category: category,
+                        timestamp: parseDate(dateText)
+                    });
+                }
+            });
+            
+            return entries;
+        }
+        
+        // Function to load entries from a category page
+        async function loadCategoryEntries(category) {
+            try {
+                const response = await fetch(`${category}.html`);
+                if (!response.ok) {
+                    console.log(`${category}.html not found, skipping...`);
+                    return [];
+                }
+                const html = await response.text();
+                return extractEntriesFromHTML(html, category);
+            } catch (error) {
+                console.log(`Error loading ${category}.html:`, error);
+                return [];
+            }
+        }
+        
+        // Function to load all entries from all categories
+        async function loadAllEntries() {
+            const container = document.getElementById('entries-container');
+            container.innerHTML = '<div class="loading">Loading entries from all categories...</div>';
+            
+            allEntries = [];
+            
+            // Load from all category pages
+            for (const category of categories) {
+                const categoryEntries = await loadCategoryEntries(category);
+                allEntries.push(...categoryEntries);
+            }
+            
+            // Sort all entries by date (newest first)
+            allEntries.sort((a, b) => b.timestamp - a.timestamp);
+            
+            // Reset display
+            displayedEntries = 0;
+            container.innerHTML = '';
+            
+            // Display first batch
+            displayMoreEntries();
+            
+            if (allEntries.length === 0) {
+                container.innerHTML = '<div class="loading">No entries found. Create some category pages first!</div>';
+            }
+        }
+        
+        // Function to create HTML for an entry
+        function createEntryHTML(entry) {
+            const itemsHTML = entry.items.map(item => {
+                return `<li>${item} <span class="category-tag">${entry.category}</span></li>`;
+            }).join('');
+            
+            return `
+                <div class="entry">
+                    <div class="date">${entry.date}</div>
+                    <ul class="done-list">
+                        ${itemsHTML}
+                    </ul>
+                </div>
+            `;
+        }
+        
+        // Function to display more entries (for infinite scroll)
+        function displayMoreEntries() {
+            if (isLoading || displayedEntries >= allEntries.length) return;
+            
+            isLoading = true;
+            const container = document.getElementById('entries-container');
+            const endIndex = Math.min(displayedEntries + entriesPerLoad, allEntries.length);
+            
+            for (let i = displayedEntries; i < endIndex; i++) {
+                container.insertAdjacentHTML('beforeend', createEntryHTML(allEntries[i]));
+            }
+            
+            displayedEntries = endIndex;
+            isLoading = false;
+        }
+        
+        // Date lookup functionality
+        function jumpToDate() {
+            const selectedDate = document.getElementById('dateInput').value;
+            const resultSpan = document.getElementById('dateResult');
+            
+            if (!selectedDate) {
+                resultSpan.textContent = 'Please select a date';
+                return;
+            }
+            
+            // Clear previous highlights
+            document.querySelectorAll('.highlight').forEach(el => {
+                el.classList.remove('highlight');
+            });
+            
+            // Format the selected date to match our entry format
+            const dateObj = new Date(selectedDate);
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                           'July', 'August', 'September', 'October', 'November', 'December'];
+            const formattedDate = `${months[dateObj.getMonth()]} ${dateObj.getDate()}, ${dateObj.getFullYear()}`;
+            
+            // Find matching date in loaded entries
+            let found = false;
+            const allDates = document.querySelectorAll('.date');
+            
+            allDates.forEach(dateEl => {
+                const dateText = dateEl.textContent.trim();
+                if (dateText === formattedDate || dateText.includes(selectedDate)) {
+                    dateEl.classList.add('highlight');
+                    dateEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    found = true;
+                    resultSpan.textContent = 'Found!';
+                    
+                    setTimeout(() => {
+                        resultSpan.textContent = '';
+                        dateEl.classList.remove('highlight');
+                    }, 3000);
+                }
+            });
+            
+            if (!found) {
+                resultSpan.textContent = 'Date not found in loaded entries';
+                setTimeout(() => {
+                    resultSpan.textContent = '';
+                }, 3000);
+            }
+        }
+        
+        // Infinite scroll detection
+        window.addEventListener('scroll', () => {
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
+                displayMoreEntries();
+            }
+        });
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAllEntries();
+            
+            // Allow Enter key to trigger date search
+            document.getElementById('dateInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    jumpToDate();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
