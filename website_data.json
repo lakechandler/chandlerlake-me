@@ -1,0 +1,28 @@
+{
+  "categories": [
+    "business",
+    "school",
+    "health",
+    "projects"
+  ],
+  "entries": {
+    "business": [
+      {
+        "date": "June 01, 2025",
+        "items": [
+          "Filled out WMSP SUP application to ensure legal adherence",
+          "Accepted liability insurance policy",
+          "Created coach training document",
+          "Designed a MTB skill dictionary (based off of NICA)",
+          "Sent off the summer kickoff email to SL parents",
+          "Got to inbox zero (3 months worth of unanswered emails)"
+        ],
+        "timestamp": "2025-06-01T16:23:40.460498"
+      }
+    ],
+    "school": [],
+    "health": [],
+    "projects": []
+  },
+  "last_updated": "2025-06-01T16:23:40.460521"
+}

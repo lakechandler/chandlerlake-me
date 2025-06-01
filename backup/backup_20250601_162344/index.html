@@ -74,6 +74,17 @@
             color: #666;
         }
         
+        .category-tag {
+            display: inline-block;
+            background: #e0e0e0;
+            color: #666;
+            padding: 2px 6px;
+            font-size: 10px;
+            border-radius: 3px;
+            margin-left: 8px;
+            text-transform: uppercase;
+        }
+        
         .date-lookup {
             margin-bottom: 30px;
             padding: 15px;
@@ -153,7 +164,8 @@
         <button class="refresh-btn" onclick="loadAllEntries()">↻ refresh</button>
     </div>
     
-    <div class="nav"><span class="current">recent</span> | <a href="business.html">business</a> | <a href="school.html">school</a> | <a href="health.html">health</a> | <a href="projects.html">projects</a> | <a href="archive.html">archive</a>
+    <div class="nav">
+        <span class="current">recent</span> | <a href="business.html">business</a> | <a href="school.html">school</a> | <a href="health.html">health</a> | <a href="projects.html">projects</a> | <a href="archive.html">archive</a>
     </div>
     
     <div class="date-lookup">
@@ -181,7 +193,7 @@
         let isLoading = false;
         
         // Categories to pull from
-        const categories = ["business", "school", "health", "projects"];
+        const categories = ['business', 'school', 'health', 'projects'];
         
         // Function to parse date strings into sortable format
         function parseDate(dateString) {
