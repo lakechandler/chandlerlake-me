@@ -2,7 +2,7 @@
   "categories": [
     "business",
     "school",
-    "health",
+    "fitness",
     "projects"
   ],
   "entries": {
@@ -21,8 +21,8 @@
       }
     ],
     "school": [],
-    "health": [],
-    "projects": []
+    "projects": [],
+    "fitness": []
   },
-  "last_updated": "2025-06-01T16:23:40.460521"
+  "last_updated": "2025-06-01T16:24:29.952768"
 }
