@@ -5,25 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chandler Lake - Asset Aggregator</title>
     <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
     <style>
-        body {
-            font-family: 'Courier New', monospace;
+        .container {
             max-width: 800px;
-            margin: 40px auto;
-            padding: 20px;
-            line-height: 1.6;
-            background: #fafafa;
-            color: #333;
-        }
-        h1 {
-            font-size: 24px;
-            margin-bottom: 5px;
-            font-weight: normal;
+            margin: 0 auto;
         }
         .tagline {
-            font-size: 14px;
+            font-size: 0.9rem;
             color: #666;
-            margin-bottom: 40px;
+            margin-bottom: 2rem;
         }
         .project {
             border-bottom: 1px solid #eee;
@@ -43,6 +34,7 @@
     </style>
 </head>
 <body>
+    <div class="container">
     <h1>Chandler Lake</h1>
     <div class="tagline">Asset aggregator</div>
     <p>Building a portfolio of outdoor recreation businesses.</p>
@@ -67,5 +59,6 @@
                 console.error(err);
             });
     </script>
+    </div>
 </body>
 </html>
